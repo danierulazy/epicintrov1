@@ -1,0 +1,16 @@
+name: AcediaMC
+version: 1.0.0
+main: id.acediamc.AcediaMCPlugin
+api-version: 1.13
+description: Intro sinematik per-member (skin + nama + musik + animasi)
+commands:
+  acediamc:
+    description: Perintah utama AcediaMC
+    aliases: [intro]
+    permission: acediamc.admin
+permissions:
+  acediamc.admin:
+    default: op
+  acediamc.skip:
+    description: Tidak ikut jadi penonton (kamera) saat intro diputar
+    default: false
