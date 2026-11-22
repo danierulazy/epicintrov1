@@ -1,7 +1,13 @@
 # ===== AcediaMC =====
-brand: "&6&lAcediaMC"      # tulisan di bossbar
+brand: "&6&lAcediaMC"            # tulisan di bossbar
 total-members: 0                 # 0 = otomatis (jumlah member yang diputar)
 play-on-first-join: false        # putar intro otomatis untuk pemain baru
+
+# true = member tampil sebagai NPC kembar berskin dia (butuh plugin Citizens).
+# Dengan ini semua pemain (termasuk member itu sendiri) jadi penonton kamera,
+# dan member yang offline tetap bisa ditampilkan. false = pakai badan pemain asli.
+use-npc: true
+npc-warmup-ticks: 30             # waktu tunggu skin NPC termuat sebelum pertunjukan mulai
 
 # Panggung: atur dengan /acediamc setstage (berdiri di tempat yang kamu mau)
 stage:
@@ -12,19 +18,20 @@ stage:
   yaw: 180.0
 
 camera:
-  duration-ticks: 160            # lama intro per member (20 tick = 1 detik)
-  distance: 5.0                  # jarak kamera dari member
-  height: 1.8                    # tinggi kamera
-  orbit-degrees: 90              # kamera menyapu sekian derajat mengelilingi member
+  duration-ticks: 200            # lama intro per member (20 tick = 1 detik)
+  distance: 5.0
+  height: 1.8
+  orbit-degrees: 90
 
 music-volume: 1.0
 
-# Urutan tampil (opsional). Member lain yang online dimainkan setelahnya.
+# Urutan tampil (opsional). Boleh berisi nama member yang offline (butuh Citizens).
 order: []
 
 # Pengaturan bawaan semua member
 default:
-  animation: SPIN                # NONE, SPIN, WAVE, JUMP, SNEAK, DANCE
+  animation: RANDOM              # RANDOM, NONE, SPIN, WAVE, DANCE, SLASH, SHOWOFF, TORNADO, LEVITATE, WARP, METEOR
+  camera: RANDOM                 # RANDOM, ORBIT, CRANE, PUSH, LOW
   particle: STAR                 # STAR, HEART, FLAME, END, MAGIC, NOTE, SMOKE, SPARKLE
   song: fanfare                  # 'fanfare' = bawaan, atau nama file di folder songs/ (.nbs)
   color: "&6"
@@ -34,7 +41,9 @@ default:
 players: {}
 #  steve:
 #    number: 2
-#    animation: WAVE
+#    skin: Notch                 # opsional: pakai skin akun lain
+#    animation: METEOR
+#    camera: CRANE
 #    particle: HEART
 #    song: epic.nbs
 #    color: "&b"

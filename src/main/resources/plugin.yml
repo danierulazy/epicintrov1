@@ -2,6 +2,7 @@ name: AcediaMC
 version: 1.0.0
 main: id.acediamc.AcediaMCPlugin
 api-version: 1.13
+softdepend: [Citizens]
 description: Intro sinematik per-member (skin + nama + musik + animasi)
 commands:
   acediamc:

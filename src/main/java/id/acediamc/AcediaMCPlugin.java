@@ -100,7 +100,7 @@ public final class AcediaMCPlugin extends JavaPlugin implements Listener {
                 if (!p.isOnline() || stage() == null) return;
                 int n = Bukkit.getOfflinePlayers().length;
                 int total = getConfig().getInt("total-members", 0);
-                manager.enqueue(p, n, total > 0 ? total : n);
+                manager.enqueue(p.getName(), n, total > 0 ? total : n);
             }
         }, 60L);
     }

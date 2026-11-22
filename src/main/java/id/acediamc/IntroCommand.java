@@ -12,8 +12,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class IntroCommand implements CommandExecutor, TabCompleter {
-    private static final List<String> SUB = Arrays.asList("play", "playall", "stop", "setstage", "set", "songs", "reload");
-    private static final List<String> KEYS = Arrays.asList("animation", "particle", "song", "subtitle", "color", "number");
+    private static final List<String> SUB = Arrays.asList("play", "playall", "stop", "setstage", "set", "songs", "anims", "reload");
+    private static final List<String> KEYS = Arrays.asList("animation", "camera", "particle", "song", "subtitle", "color", "number", "skin");
     private final AcediaMCPlugin plugin;
 
     public IntroCommand(AcediaMCPlugin plugin) {
@@ -27,7 +27,7 @@ public final class IntroCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender s, Command c, String label, String[] a) {
         if (a.length == 0) {
-            msg(s, "/intro play <pemain> | playall | stop | setstage | set <pemain> <kunci> <nilai> | songs | reload");
+            msg(s, "/intro play <nama> | playall | stop | setstage | set <nama> <kunci> <nilai> | songs | anims | reload");
             return true;
         }
         String sub = a[0].toLowerCase();
@@ -36,23 +36,30 @@ public final class IntroCommand implements CommandExecutor, TabCompleter {
             plugin.setStage(((Player) s).getLocation());
             msg(s, "Panggung disimpan di lokasimu (arah hadap = arah hadap member).");
         } else if (sub.equals("play")) {
-            if (a.length < 2) { msg(s, "Pakai: /intro play <pemain>"); return true; }
+            if (a.length < 2) { msg(s, "Pakai: /intro play <nama>"); return true; }
             Player p = Bukkit.getPlayerExact(a[1]);
-            if (p == null) { msg(s, "Pemain harus online."); return true; }
+            if (p == null && !NpcBridge.available()) {
+                msg(s, "Pemain harus online (atau pasang plugin Citizens agar member offline bisa tampil sebagai NPC).");
+                return true;
+            }
             if (plugin.stage() == null) { msg(s, "Atur panggung dulu: /intro setstage"); return true; }
-            int n = plugin.getConfig().getInt("players." + p.getName().toLowerCase() + ".number", 1);
+            String nm = p != null ? p.getName() : a[1];
+            int n = plugin.getConfig().getInt("players." + nm.toLowerCase() + ".number", 1);
             int total = plugin.getConfig().getInt("total-members", 0);
-            plugin.manager().enqueue(p, n, total > 0 ? total : Math.max(n, 1));
+            plugin.manager().enqueue(nm, n, total > 0 ? total : Math.max(n, 1));
         } else if (sub.equals("playall")) {
             if (plugin.stage() == null) { msg(s, "Atur panggung dulu: /intro setstage"); return true; }
-            plugin.manager().playAll();
-            msg(s, "Memutar intro semua pemain online.");
+            int cnt = plugin.manager().playAll();
+            msg(s, "Memutar intro " + cnt + " member" + (NpcBridge.available() ? " (mode NPC)." : " (mode pemain asli, tanpa Citizens)."));
         } else if (sub.equals("stop")) {
             plugin.manager().stopAll();
             msg(s, "Dihentikan.");
         } else if (sub.equals("reload")) {
             plugin.reload();
             msg(s, "Config dimuat ulang.");
+        } else if (sub.equals("anims")) {
+            msg(s, "Animasi: RANDOM, " + Arrays.toString(Animation.values()));
+            msg(s, "Kamera: RANDOM, ORBIT, CRANE, PUSH, LOW");
         } else if (sub.equals("songs")) {
             String[] files = new java.io.File(plugin.getDataFolder(), "songs").list();
             msg(s, "Lagu: fanfare (bawaan)" + (files != null && files.length > 0 ? ", " + String.join(", ", files) : ""));
@@ -64,12 +71,23 @@ public final class IntroCommand implements CommandExecutor, TabCompleter {
             for (int i = 3; i < a.length; i++) v.append(i > 3 ? " " : "").append(a[i]);
             Object val = v.toString();
             if (key.equals("animation")) {
-                try {
-                    val = Animation.valueOf(v.toString().toUpperCase()).name();
-                } catch (IllegalArgumentException e) {
-                    msg(s, "Animasi: " + Arrays.toString(Animation.values()));
+                if (v.toString().equalsIgnoreCase("RANDOM")) {
+                    val = "RANDOM";
+                } else {
+                    try {
+                        val = Animation.valueOf(v.toString().toUpperCase()).name();
+                    } catch (IllegalArgumentException e) {
+                        msg(s, "Animasi: RANDOM, " + Arrays.toString(Animation.values()));
+                        return true;
+                    }
+                }
+            } else if (key.equals("camera")) {
+                String cv = v.toString().toUpperCase();
+                if (!Arrays.asList("RANDOM", "ORBIT", "CRANE", "PUSH", "LOW").contains(cv)) {
+                    msg(s, "Kamera: RANDOM, ORBIT, CRANE, PUSH, LOW");
                     return true;
                 }
+                val = cv;
             } else if (key.equals("number")) {
                 try {
                     val = Integer.parseInt(v.toString().trim());
@@ -98,7 +116,10 @@ public final class IntroCommand implements CommandExecutor, TabCompleter {
         } else if (a.length == 3 && a[0].equalsIgnoreCase("set")) {
             for (String x : KEYS) if (x.startsWith(a[2].toLowerCase())) out.add(x);
         } else if (a.length == 4 && a[0].equalsIgnoreCase("set") && a[2].equalsIgnoreCase("animation")) {
+            out.add("RANDOM");
             for (Animation an : Animation.values()) out.add(an.name());
+        } else if (a.length == 4 && a[0].equalsIgnoreCase("set") && a[2].equalsIgnoreCase("camera")) {
+            out.addAll(Arrays.asList("RANDOM", "ORBIT", "CRANE", "PUSH", "LOW"));
         }
         return out;
     }

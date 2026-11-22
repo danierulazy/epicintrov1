@@ -6,13 +6,21 @@ import org.bukkit.entity.Player;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /** Antrean adegan: member diputar satu per satu. */
 public final class SequenceManager {
     private static final class Job {
-        final Player actor; final int index, total;
-        Job(Player a, int i, int t) { actor = a; index = i; total = t; }
+        final String name;
+        final int index, total;
+
+        Job(String n, int i, int t) {
+            name = n;
+            index = i;
+            total = t;
+        }
     }
 
     private final AcediaMCPlugin plugin;
@@ -23,49 +31,56 @@ public final class SequenceManager {
         this.plugin = plugin;
     }
 
-    public boolean isRunning() {
-        return current != null || !queue.isEmpty();
-    }
-
-    public void enqueue(Player actor, int index, int total) {
-        queue.add(new Job(actor, index, total));
+    public void enqueue(String name, int index, int total) {
+        queue.add(new Job(name, index, total));
         next();
     }
 
-    public void playAll() {
-        List<Player> list = new ArrayList<Player>();
-        for (String name : plugin.getConfig().getStringList("order")) {
-            Player p = Bukkit.getPlayerExact(name);
-            if (p != null && !list.contains(p)) list.add(p);
+    /** Memutar semua member: urutan 'order' di config (boleh offline kalau ada Citizens), lalu pemain online lain. */
+    public int playAll() {
+        boolean npc = NpcBridge.available();
+        List<String> names = new ArrayList<String>();
+        Set<String> seen = new HashSet<String>();
+        for (String n : plugin.getConfig().getStringList("order")) {
+            Player p = Bukkit.getPlayerExact(n);
+            if (p == null && !npc) continue;
+            String nm = p != null ? p.getName() : n;
+            if (seen.add(nm.toLowerCase())) names.add(nm);
         }
-        for (Player p : Bukkit.getOnlinePlayers()) if (!list.contains(p)) list.add(p);
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (seen.add(p.getName().toLowerCase())) names.add(p.getName());
+        }
         int total = plugin.getConfig().getInt("total-members", 0);
-        if (total <= 0) total = list.size();
+        if (total <= 0) total = names.size();
         int i = 1;
-        for (Player p : list) {
-            int num = plugin.getConfig().getInt("players." + p.getName().toLowerCase() + ".number", i);
-            queue.add(new Job(p, num, total));
+        for (String nm : names) {
+            int num = plugin.getConfig().getInt("players." + nm.toLowerCase() + ".number", i);
+            queue.add(new Job(nm, num, total));
             i++;
         }
         next();
+        return names.size();
     }
 
     private void next() {
         if (current != null) return;
         Job j = queue.poll();
         if (j == null) return;
-        if (!j.actor.isOnline() || plugin.stage() == null) { next(); return; }
+        if (plugin.stage() == null) { next(); return; }
+        Player actorPlayer = Bukkit.getPlayerExact(j.name);
         List<Player> viewers = new ArrayList<Player>();
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (!p.equals(j.actor) && !p.hasPermission("acediamc.skip")) viewers.add(p);
+            if (!p.hasPermission("acediamc.skip")) viewers.add(p);
         }
-        current = new IntroSequence(plugin, j.actor, j.index, j.total, viewers, new Runnable() {
+        current = new IntroSequence(plugin, j.name, actorPlayer, j.index, j.total, viewers, new Runnable() {
             @Override
             public void run() {
                 current = null;
                 Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
                     @Override
-                    public void run() { next(); }
+                    public void run() {
+                        next();
+                    }
                 }, 10L);
             }
         });

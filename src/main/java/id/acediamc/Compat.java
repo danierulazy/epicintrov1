@@ -29,6 +29,8 @@ public final class Compat {
         ALIASES.put("FLAME", Arrays.asList("FLAME"));
         ALIASES.put("END", Arrays.asList("END_ROD"));
         ALIASES.put("NOTE", Arrays.asList("NOTE"));
+        ALIASES.put("BOOM", Arrays.asList("EXPLOSION_LARGE", "EXPLOSION"));
+        ALIASES.put("SWEEP", Arrays.asList("SWEEP_ATTACK"));
         try {
             particleClass = Class.forName("org.bukkit.Particle");
             spawn = World.class.getMethod("spawnParticle", particleClass, double.class, double.class,
@@ -65,6 +67,13 @@ public final class Compat {
     public static void play(Player p, String sound, float vol, float pitch) {
         try {
             p.playSound(p.getLocation(), sound, vol, pitch);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    public static void worldPlay(Location l, String sound, float vol, float pitch) {
+        try {
+            l.getWorld().playSound(l, sound, vol, pitch);
         } catch (Throwable ignored) {
         }
     }
